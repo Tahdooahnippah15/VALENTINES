@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Valentine?</title>
+
   <style>
     :root{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -37,8 +38,8 @@
       text-align:center;
       border:1px solid rgba(176,0,58,.12);
       backdrop-filter: blur(6px);
-      position:relative; /* IMPORTANT: allows absolute NO button inside */
-      z-index: 2;
+      position:relative;
+      z-index:2;
     }
 
     h1{ margin:0 0 18px; font-size:clamp(28px,5vw,46px); }
@@ -47,11 +48,10 @@
       display:flex;
       gap:14px;
       justify-content:center;
-      flex-wrap:wrap;
       margin-top:10px;
-      position: relative;
-      z-index: 3;
-      min-height: 60px; /* keeps layout stable once NO becomes absolute */
+      min-height:60px;
+      position:relative;
+      z-index:3;
     }
 
     button{
@@ -60,17 +60,15 @@
       padding:14px 22px;
       font-size:18px;
       cursor:pointer;
-      user-select:none;
-      touch-action:manipulation;
+      box-shadow:0 12px 30px rgba(176,0,58,.22);
       transition: transform .12s ease, filter .12s ease;
-      box-shadow: 0 12px 30px rgba(176,0,58,.22);
     }
+
     button:hover{ transform: translateY(-1px); filter: brightness(1.04); }
 
     #yesBtn{
       background: linear-gradient(135deg, var(--hot), var(--deep));
       color:#fff;
-      outline:2px solid rgba(255,45,118,.18);
     }
 
     #noBtn{
@@ -85,71 +83,67 @@
       margin:14px 0 10px;
       font-weight:800;
       color:var(--deep);
-      text-shadow:0 1px 0 rgba(255,45,118,.10);
     }
 
     #reveal img{
       width:min(540px,92%);
       border-radius:18px;
       box-shadow:0 18px 50px rgba(120,10,40,.22);
-      border:1px solid rgba(255,45,118,.18);
     }
 
-    .tiny{ opacity:.75; font-size:14px; margin-top:10px; }
+    .tiny{ opacity:.7; font-size:14px; }
+
+    /* Hearts */
+    .hearts{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:1;
+    }
+
+    .heart{
+      position:absolute;
+      width:14px;
+      height:14px;
+      background:#ff4d6d;
+      transform:rotate(45deg);
+      opacity:.6;
+      animation:floatUp linear infinite;
+    }
+
+    .heart::before,
+    .heart::after{
+      content:'';
+      position:absolute;
+      width:14px;
+      height:14px;
+      background:inherit;
+      border-radius:50%;
+    }
+
+    .heart::before{ top:-7px; left:0; }
+    .heart::after{ left:-7px; top:0; }
+
+    @keyframes floatUp{
+      from{ transform:translateY(110vh) rotate(45deg); opacity:0; }
+      10%{ opacity:.6; }
+      to{ transform:translateY(-140px) rotate(45deg); opacity:0; }
+    }
 
     canvas.confetti{
       position:fixed;
       inset:0;
       pointer-events:none;
-      z-index: 10;
+      z-index:10;
     }
 
     .ver{
-      position: fixed;
-      left: 12px;
-      bottom: 10px;
-      font-size: 12px;
-      opacity: .65;
-      z-index: 9999;
-      pointer-events: none;
-    }
-
-    /* Floating hearts background */
-    .hearts{
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: 1;
-    }
-
-    .heart{
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      background: #ff4d6d;
-      transform: rotate(45deg);
-      opacity: 0.6;
-      animation: floatUp linear infinite;
-    }
-
-    .heart::before,
-    .heart::after{
-      content: '';
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      background: inherit;
-      border-radius: 50%;
-    }
-
-    .heart::before{ top: -7px; left: 0; }
-    .heart::after{ left: -7px; top: 0; }
-
-    @keyframes floatUp{
-      from { transform: translateY(110vh) rotate(45deg); opacity: 0; }
-      10% { opacity: 0.6; }
-      to   { transform: translateY(-140px) rotate(45deg); opacity: 0; }
+      position:fixed;
+      left:12px;
+      bottom:10px;
+      font-size:12px;
+      opacity:.6;
+      z-index:9999;
     }
   </style>
 </head>
@@ -157,20 +151,20 @@
 <body>
   <div class="hearts" id="hearts"></div>
   <canvas class="confetti" id="confetti"></canvas>
-  <div class="ver">v-NO-BOUNCE-IN-CARD</div>
+  <div class="ver">v-NO-IN-CARD-1S</div>
 
   <div class="card" id="card">
     <h1>Will you be my valentine?</h1>
 
     <div class="buttons" id="buttonsRow">
-      <button id="yesBtn" type="button">Yes</button>
-      <button id="noBtn" type="button">No</button>
+      <button id="yesBtn">Yes</button>
+      <button id="noBtn">No</button>
     </div>
 
     <div id="reveal">
       <div class="caption">Congratulations, you may live another day</div>
-      <img id="photo" alt="Custom photo" />
-      <div class="tiny">If the image doesn’t show, your filename/path is wrong.</div>
+      <img id="photo" alt="Custom photo">
+      <div class="tiny">If it doesn’t load, your filename is wrong.</div>
     </div>
   </div>
 
@@ -179,160 +173,103 @@
   <script>
     const yesBtn = document.getElementById('yesBtn');
     const noBtn  = document.getElementById('noBtn');
+    const card   = document.getElementById('card');
     const reveal = document.getElementById('reveal');
     const photo  = document.getElementById('photo');
     const bgAudio = document.getElementById('bgAudio');
 
-    const card = document.getElementById('card');
-    const buttonsRow = document.getElementById('buttonsRow');
+    /* Floating hearts */
+    const hearts = document.getElementById('hearts');
+    const colors = ['#ff2d76','#ff4d6d','#ff8fab','#b0003a'];
 
-    // ---------- Floating hearts ----------
-    const heartsContainer = document.getElementById('hearts');
-    const heartColors = ['#ff2d76', '#ff4d6d', '#ff8fab', '#b0003a'];
+    setInterval(() => {
+      const h = document.createElement('div');
+      h.className = 'heart';
+      const size = 10 + Math.random()*14;
+      const dur = 6 + Math.random()*6;
+      h.style.width = h.style.height = size + 'px';
+      h.style.left = Math.random()*100 + 'vw';
+      h.style.background = colors[Math.floor(Math.random()*colors.length)];
+      h.style.animationDuration = dur + 's';
+      hearts.appendChild(h);
+      setTimeout(() => h.remove(), dur*1000);
+    }, 450);
 
-    function spawnHeart() {
-      const heart = document.createElement('div');
-      heart.className = 'heart';
-      const size = 10 + Math.random() * 14;
-      const duration = 6 + Math.random() * 6;
-
-      heart.style.width = size + 'px';
-      heart.style.height = size + 'px';
-      heart.style.left = (Math.random() * 100) + 'vw';
-      heart.style.background = heartColors[(Math.random() * heartColors.length) | 0];
-      heart.style.animationDuration = duration + 's';
-
-      heartsContainer.appendChild(heart);
-      setTimeout(() => heart.remove(), duration * 1000);
-    }
-    setInterval(spawnHeart, 450);
-
-    // ---------- NO button: 3s normal, then bounce INSIDE THE CARD ----------
-    const DELAY_MS = 3000;
+    /* NO button: 1 second delay */
+    const DELAY_MS = 1000;
     const padding = 10;
+    let x, y, vx = 2.6, vy = 2.1;
 
-    let x, y;
-    let vx = 2.6, vy = 2.1;
+    setTimeout(() => {
+      const noRect = noBtn.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
 
-    function startNoButtonInCardAfterDelay() {
-      setTimeout(() => {
-        // Take current position of NO relative to the card
-        const noRect = noBtn.getBoundingClientRect();
-        const cardRect = card.getBoundingClientRect();
+      x = noRect.left - cardRect.left;
+      y = noRect.top  - cardRect.top;
 
-        x = noRect.left - cardRect.left;
-        y = noRect.top  - cardRect.top;
+      noBtn.style.position = 'absolute';
+      noBtn.style.left = x + 'px';
+      noBtn.style.top  = y + 'px';
 
-        // Make NO absolute inside the card
-        noBtn.style.position = 'absolute';
+      function move(){
+        const rect = noBtn.getBoundingClientRect();
+        const maxX = card.clientWidth  - rect.width  - padding;
+        const maxY = card.clientHeight - rect.height - padding;
+
+        x += vx; y += vy;
+
+        if (x <= padding || x >= maxX) vx *= -1;
+        if (y <= padding || y >= maxY) vy *= -1;
+
         noBtn.style.left = x + 'px';
         noBtn.style.top  = y + 'px';
-        noBtn.style.zIndex = 5;
 
-        // (Optional) Keep the button row from collapsing
-        // We already set min-height on .buttons, so this is mostly insurance.
-        buttonsRow.style.position = 'relative';
+        requestAnimationFrame(move);
+      }
+      requestAnimationFrame(move);
+    }, DELAY_MS);
 
-        function step() {
-          const rect = noBtn.getBoundingClientRect();
-          const cardNow = card.getBoundingClientRect();
-
-          // Compute bounds inside card
-          const maxX = cardNow.width  - rect.width  - padding;
-          const maxY = cardNow.height - rect.height - padding;
-
-          x += vx;
-          y += vy;
-
-          if (x <= padding) { x = padding; vx *= -1; }
-          else if (x >= maxX) { x = maxX; vx *= -1; }
-
-          if (y <= padding) { y = padding; vy *= -1; }
-          else if (y >= maxY) { y = maxY; vy *= -1; }
-
-          noBtn.style.left = x + 'px';
-          noBtn.style.top  = y + 'px';
-
-          requestAnimationFrame(step);
-        }
-
-        requestAnimationFrame(step);
-      }, DELAY_MS);
-    }
-
-    startNoButtonInCardAfterDelay();
-
-    // Optional: if clicked, speed up
-    noBtn.addEventListener('click', (e) => {
+    noBtn.addEventListener('click', e => {
       e.preventDefault();
-      vx *= 1.15;
-      vy *= 1.15;
+      vx *= 1.15; vy *= 1.15;
     });
 
-    // ---------- YES click reveals photo + plays MP3 + confetti ----------
     yesBtn.addEventListener('click', async () => {
       reveal.style.display = 'block';
-
       photo.src = 'photo.jpg';
       bgAudio.src = 'song.mp3';
-      bgAudio.currentTime = 0;
-      bgAudio.volume = 0.9;
-
-      try { await bgAudio.play(); } catch (e) {}
-
-      launchConfetti();
+      try{ await bgAudio.play(); }catch(e){}
+      confetti();
     });
 
-    // ---------- Confetti ----------
-    function launchConfetti() {
-      const canvas = document.getElementById('confetti');
-      const ctx = canvas.getContext('2d');
+    function confetti(){
+      const c = document.getElementById('confetti');
+      const ctx = c.getContext('2d');
+      c.width = innerWidth; c.height = innerHeight;
 
-      function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-      resize();
-      addEventListener('resize', resize);
-
-      const colors = ['#ff2d76','#ff4d6d','#ff8fab','#b0003a','#ff5c8a','#ffd1dc'];
-
-      const pieces = Array.from({ length: 220 }, () => ({
-        x: Math.random() * canvas.width,
-        y: -20 - Math.random() * canvas.height * 0.3,
-        w: 6 + Math.random() * 8,
-        h: 4 + Math.random() * 6,
-        vx: (Math.random() * 2 - 1) * 2.4,
-        vy: 2 + Math.random() * 5.0,
-        a: Math.random() * Math.PI * 2,
-        va: (Math.random() * 2 - 1) * 0.16,
-        life: 240 + Math.random() * 120,
-        c: colors[(Math.random() * colors.length) | 0]
+      const pieces = Array.from({length:220},()=>({
+        x:Math.random()*c.width,
+        y:-20,
+        w:6+Math.random()*8,
+        h:4+Math.random()*6,
+        vx:(Math.random()*2-1)*2.4,
+        vy:2+Math.random()*5,
+        r:Math.random()*Math.PI,
+        c:colors[Math.floor(Math.random()*colors.length)]
       }));
 
-      let frame = 0;
-      (function tick() {
-        frame++;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        for (const p of pieces) {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.a += p.va;
-          p.vy += 0.02;
-          p.life--;
-
-          if (p.x < -20) p.x = canvas.width + 20;
-          if (p.x > canvas.width + 20) p.x = -20;
-
+      (function tick(){
+        ctx.clearRect(0,0,c.width,c.height);
+        for(const p of pieces){
+          p.x+=p.vx; p.y+=p.vy; p.vy+=0.02;
           ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.a);
-          ctx.fillStyle = p.c;
-          ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+          ctx.translate(p.x,p.y);
+          ctx.rotate(p.r);
+          ctx.fillStyle=p.c;
+          ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
           ctx.restore();
         }
-
-        const alive = pieces.some(p => p.life > 0 && p.y < canvas.height + 40);
-        if (alive && frame < 650) requestAnimationFrame(tick);
-        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(tick);
       })();
     }
   </script>
