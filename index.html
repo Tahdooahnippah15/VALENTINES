@@ -107,136 +107,120 @@
   <audio id="bgAudio"></audio>
 
   <script>
-    const yesBtn = document.getElementById('yesBtn');
-    const noBtn = document.getElementById('noBtn');
-    const reveal = document.getElementById('reveal');
-    const photo = document.getElementById('photo');
-    const bgAudio = document.getElementById('bgAudio');
+  const yesBtn = document.getElementById('yesBtn');
+  const noBtn = document.getElementById('noBtn');
+  const reveal = document.getElementById('reveal');
+  const photo = document.getElementById('photo');
+  const bgAudio = document.getElementById('bgAudio');
 
-    // --- NO button fleeing logic ---
-    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+  // --- NO button: continuous flying/bouncing ---
+  let x = 100, y = 120;
+  let vx = 2.8, vy = 2.3;
 
-    function makeNoFixedIfNeeded() {
-      // First time, switch NO to fixed so it can roam freely
-      if (getComputedStyle(noBtn).position !== 'fixed') {
-        const r = noBtn.getBoundingClientRect();
-        noBtn.style.position = 'fixed';
-        noBtn.style.left = r.left + 'px';
-        noBtn.style.top = r.top + 'px';
-        noBtn.style.zIndex = 6;
-      }
-    }
+  function startNoButtonChaos() {
+    const r = noBtn.getBoundingClientRect();
+    x = r.left; y = r.top;
 
-    function moveNoButton(aggressive = true) {
-      makeNoFixedIfNeeded();
+    noBtn.style.position = 'fixed';
+    noBtn.style.left = x + 'px';
+    noBtn.style.top = y + 'px';
+    noBtn.style.zIndex = 6;
 
-      const padding = 16;
+    const padding = 10;
+
+    function animate() {
       const rect = noBtn.getBoundingClientRect();
-      const w = rect.width;
-      const h = rect.height;
 
-      const maxX = window.innerWidth - w - padding;
-      const maxY = window.innerHeight - h - padding;
+      x += vx;
+      y += vy;
 
-      const jump = aggressive ? 280 : 130;
-      const dx = (Math.random() * 2 - 1) * jump;
-      const dy = (Math.random() * 2 - 1) * jump;
+      if (x <= padding || x + rect.width >= window.innerWidth - padding) vx *= -1;
+      if (y <= padding || y + rect.height >= window.innerHeight - padding) vy *= -1;
 
-      const newX = clamp(rect.left + dx, padding, maxX);
-      const newY = clamp(rect.top + dy, padding, maxY);
+      noBtn.style.left = x + 'px';
+      noBtn.style.top = y + 'px';
 
-      noBtn.style.left = newX + 'px';
-      noBtn.style.top = newY + 'px';
+      requestAnimationFrame(animate);
     }
+    animate();
+  }
 
-    // Flee when hovered/touched
-    ['mouseenter','mouseover','pointerenter','touchstart'].forEach(evt => {
-      noBtn.addEventListener(evt, () => moveNoButton(true), { passive: true });
-    });
+  startNoButtonChaos();
 
-    // Also flee if pointer gets close
-    document.addEventListener('pointermove', (e) => {
-      const r = noBtn.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      if (dist < 150) moveNoButton(false);
-    }, { passive: true });
+  // Speed up if clicked
+  noBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    vx *= 1.25;
+    vy *= 1.25;
+  });
 
-    // If they click NO anyway, it still runs (petty)
-    noBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      moveNoButton(true);
-    });
+  // --- YES click reveals everything ---
+  yesBtn.addEventListener('click', async () => {
+    reveal.style.display = 'block';
 
-    // --- YES click reveals everything ---
-    yesBtn.addEventListener('click', async () => {
-      reveal.style.display = 'block';
+    photo.src = 'photo.jpg';
+    bgAudio.src = 'song.mp3';
+    bgAudio.currentTime = 0;
+    bgAudio.volume = 0.9;
 
-      // Load image/audio only now
-      photo.src = 'photo.jpg';   // put photo.jpg next to index.html
-      bgAudio.src = 'song.mp3';  // put song.mp3 next to index.html
-      bgAudio.currentTime = 0;
-      bgAudio.volume = 0.9;
+    try { await bgAudio.play(); }
+    catch (e) { console.warn('Audio play blocked:', e); }
 
-      try { await bgAudio.play(); }
-      catch (e) { console.warn('Audio play blocked:', e); }
+    launchConfetti();
+  });
 
-      launchConfetti();
-    });
+  // Confetti (pink/red)
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
 
-    // Confetti (pink/red)
-    function launchConfetti() {
-      const canvas = document.getElementById('confetti');
-      const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    resize();
+    addEventListener('resize', resize);
 
-      function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-      resize();
-      addEventListener('resize', resize);
+    const colors = ['#ff2d76','#ff4d6d','#ff8fab','#b0003a','#ff5c8a','#ffd1dc'];
 
-      const colors = ['#ff2d76','#ff4d6d','#ff8fab','#b0003a','#ff5c8a','#ffd1dc'];
+    const pieces = Array.from({ length: 220 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * canvas.height * 0.3,
+      w: 6 + Math.random() * 8,
+      h: 4 + Math.random() * 6,
+      vx: (Math.random() * 2 - 1) * 2.4,
+      vy: 2 + Math.random() * 5.0,
+      a: Math.random() * Math.PI * 2,
+      va: (Math.random() * 2 - 1) * 0.16,
+      life: 240 + Math.random() * 120,
+      c: colors[(Math.random() * colors.length) | 0]
+    }));
 
-      const pieces = Array.from({ length: 220 }, () => ({
-        x: Math.random() * canvas.width,
-        y: -20 - Math.random() * canvas.height * 0.3,
-        w: 6 + Math.random() * 8,
-        h: 4 + Math.random() * 6,
-        vx: (Math.random() * 2 - 1) * 2.4,
-        vy: 2 + Math.random() * 5.0,
-        a: Math.random() * Math.PI * 2,
-        va: (Math.random() * 2 - 1) * 0.16,
-        life: 240 + Math.random() * 120,
-        c: colors[(Math.random() * colors.length) | 0]
-      }));
+    let frame = 0;
+    (function tick() {
+      frame++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      let frame = 0;
-      (function tick() {
-        frame++;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of pieces) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.a += p.va;
+        p.vy += 0.02;
+        p.life--;
 
-        for (const p of pieces) {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.a += p.va;
-          p.vy += 0.02;
-          p.life--;
+        if (p.x < -20) p.x = canvas.width + 20;
+        if (p.x > canvas.width + 20) p.x = -20;
 
-          if (p.x < -20) p.x = canvas.width + 20;
-          if (p.x > canvas.width + 20) p.x = -20;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.a);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      }
 
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.a);
-          ctx.fillStyle = p.c;
-          ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
-          ctx.restore();
-        }
-
-        const alive = pieces.some(p => p.life > 0 && p.y < canvas.height + 40);
-        if (alive && frame < 650) requestAnimationFrame(tick);
-        else ctx.clearRect(0, 0, canvas.width, canvas.height);
-      })();
-    }
+      const alive = pieces.some(p => p.life > 0 && p.y < canvas.height + 40);
+      if (alive && frame < 650) requestAnimationFrame(tick);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    })();
+   }
   </script>
 </body>
 </html>
