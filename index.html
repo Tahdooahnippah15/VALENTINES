@@ -37,7 +37,7 @@
       text-align:center;
       border:1px solid rgba(176,0,58,.12);
       backdrop-filter: blur(6px);
-      position:relative;
+      position:relative; /* IMPORTANT: allows absolute NO button inside */
       z-index: 2;
     }
 
@@ -51,6 +51,7 @@
       margin-top:10px;
       position: relative;
       z-index: 3;
+      min-height: 60px; /* keeps layout stable once NO becomes absolute */
     }
 
     button{
@@ -103,7 +104,6 @@
       z-index: 10;
     }
 
-    /* Version tag so you can see you’re on the new build */
     .ver{
       position: fixed;
       left: 12px;
@@ -157,12 +157,12 @@
 <body>
   <div class="hearts" id="hearts"></div>
   <canvas class="confetti" id="confetti"></canvas>
-  <div class="ver">v-HEARTS-DELAY-NO</div>
+  <div class="ver">v-NO-BOUNCE-IN-CARD</div>
 
-  <div class="card">
+  <div class="card" id="card">
     <h1>Will you be my valentine?</h1>
 
-    <div class="buttons">
+    <div class="buttons" id="buttonsRow">
       <button id="yesBtn" type="button">Yes</button>
       <button id="noBtn" type="button">No</button>
     </div>
@@ -174,7 +174,6 @@
     </div>
   </div>
 
-  <!-- Audio has no src until YES -->
   <audio id="bgAudio"></audio>
 
   <script>
@@ -184,6 +183,9 @@
     const photo  = document.getElementById('photo');
     const bgAudio = document.getElementById('bgAudio');
 
+    const card = document.getElementById('card');
+    const buttonsRow = document.getElementById('buttonsRow');
+
     // ---------- Floating hearts ----------
     const heartsContainer = document.getElementById('hearts');
     const heartColors = ['#ff2d76', '#ff4d6d', '#ff8fab', '#b0003a'];
@@ -191,7 +193,6 @@
     function spawnHeart() {
       const heart = document.createElement('div');
       heart.className = 'heart';
-
       const size = 10 + Math.random() * 14;
       const duration = 6 + Math.random() * 6;
 
@@ -206,34 +207,42 @@
     }
     setInterval(spawnHeart, 450);
 
-    // ---------- NO button: 3s delay, then bounce forever (never off-screen) ----------
+    // ---------- NO button: 3s normal, then bounce INSIDE THE CARD ----------
     const DELAY_MS = 3000;
     const padding = 10;
 
     let x, y;
-    let vx = 3.2, vy = 2.7;
+    let vx = 2.6, vy = 2.1;
 
-    function startNoButtonAfterDelay() {
+    function startNoButtonInCardAfterDelay() {
       setTimeout(() => {
-        // Start from its current location
-        const r = noBtn.getBoundingClientRect();
-        x = r.left;
-        y = r.top;
+        // Take current position of NO relative to the card
+        const noRect = noBtn.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
 
-        // Move relative to viewport
-        noBtn.style.position = 'fixed';
+        x = noRect.left - cardRect.left;
+        y = noRect.top  - cardRect.top;
+
+        // Make NO absolute inside the card
+        noBtn.style.position = 'absolute';
         noBtn.style.left = x + 'px';
         noBtn.style.top  = y + 'px';
-        noBtn.style.zIndex = 6;
+        noBtn.style.zIndex = 5;
+
+        // (Optional) Keep the button row from collapsing
+        // We already set min-height on .buttons, so this is mostly insurance.
+        buttonsRow.style.position = 'relative';
 
         function step() {
           const rect = noBtn.getBoundingClientRect();
+          const cardNow = card.getBoundingClientRect();
+
+          // Compute bounds inside card
+          const maxX = cardNow.width  - rect.width  - padding;
+          const maxY = cardNow.height - rect.height - padding;
 
           x += vx;
           y += vy;
-
-          const maxX = window.innerWidth  - rect.width  - padding;
-          const maxY = window.innerHeight - rect.height - padding;
 
           if (x <= padding) { x = padding; vx *= -1; }
           else if (x >= maxX) { x = maxX; vx *= -1; }
@@ -246,10 +255,12 @@
 
           requestAnimationFrame(step);
         }
+
         requestAnimationFrame(step);
       }, DELAY_MS);
     }
-    startNoButtonAfterDelay();
+
+    startNoButtonInCardAfterDelay();
 
     // Optional: if clicked, speed up
     noBtn.addEventListener('click', (e) => {
@@ -262,7 +273,6 @@
     yesBtn.addEventListener('click', async () => {
       reveal.style.display = 'block';
 
-      // Load only now
       photo.src = 'photo.jpg';
       bgAudio.src = 'song.mp3';
       bgAudio.currentTime = 0;
