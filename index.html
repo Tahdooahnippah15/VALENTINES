@@ -91,9 +91,7 @@
       box-shadow:0 18px 50px rgba(120,10,40,.22);
     }
 
-    .tiny{ opacity:.7; font-size:14px; }
-
-    /* Hearts */
+    /* Floating hearts */
     .hearts{
       position:fixed;
       inset:0;
@@ -136,22 +134,12 @@
       pointer-events:none;
       z-index:10;
     }
-
-    .ver{
-      position:fixed;
-      left:12px;
-      bottom:10px;
-      font-size:12px;
-      opacity:.6;
-      z-index:9999;
-    }
   </style>
 </head>
 
 <body>
   <div class="hearts" id="hearts"></div>
   <canvas class="confetti" id="confetti"></canvas>
-  <div class="ver">v-NO-IN-CARD-1S</div>
 
   <div class="card" id="card">
     <h1>Will you be my valentine?</h1>
@@ -164,7 +152,6 @@
     <div id="reveal">
       <div class="caption">Congratulations, you may live another day</div>
       <img id="photo" alt="Custom photo">
-      <div class="tiny">If it doesn’t load, your filename is wrong.</div>
     </div>
   </div>
 
@@ -178,7 +165,7 @@
     const photo  = document.getElementById('photo');
     const bgAudio = document.getElementById('bgAudio');
 
-    /* Floating hearts */
+    /* Hearts */
     const hearts = document.getElementById('hearts');
     const colors = ['#ff2d76','#ff4d6d','#ff8fab','#b0003a'];
 
@@ -195,7 +182,7 @@
       setTimeout(() => h.remove(), dur*1000);
     }, 450);
 
-    /* NO button: 1 second delay */
+    /* NO button: 1 second delay, then bounce inside card */
     const DELAY_MS = 1000;
     const padding = 10;
     let x, y, vx = 2.6, vy = 2.1;
